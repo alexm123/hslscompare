@@ -1,0 +1,83 @@
+---
+title: "hslscompare"
+format: html
+editor: visual
+---
+
+```{r}
+
+
+set.seed(42)
+
+library(dplyr)
+
+load("C:/Users/alex/OneDrive/Desktop/New folder (4)/hsls_17_student_pets_sr_v1_0.rdata")
+
+dathsls <- hsls_17_student_pets_sr_v1_0
+dathsls_old <- haven::read_sav('C:/Users/alex/Downloads/HSLS 2009 6.11.21.sav')
+
+
+hsls <- dathsls
+hsls <- hsls %>%
+  rename(stu_id = STU_ID, # change column names
+         sch_id = SCH_ID,
+         excellentTests = S1MTESTS,
+         understandTexts = S1MTEXTBOOK,
+         masterSkills = S1MSKILLS,
+         excellentAssign = S1MASSEXCL,
+         sex = X1SEX,
+         race = X1RACE,
+         hispanic = X1HISPANIC,
+         white = X1WHITE,
+         black = X1BLACK,
+         asian = X1ASIAN,
+         pacificIsland = X1PACISLE,
+         SES = X1SES,
+         hsls_w_cohort_g9 = W1STUDENT,
+         hsls_w_cohort_g12 = W2STUDENT)
+
+hsls_old <- dathsls_old
+hsls_old <- hsls_old %>%
+  rename(stu_id = STU_ID, # change column names
+         sch_id = SCH_ID,
+         excellentTests = S1MTESTS,
+         understandTexts = S1MTEXTBOOK,
+         masterSkills = S1MSKILLS,
+         excellentAssign = S1MASSEXCL,
+         sex = X1SEX,
+         race = X1RACE,
+         hispanic = X1HISPANIC,
+         white = X1WHITE,
+         black = X1BLACK,
+         asian = X1ASIAN,
+         pacificIsland = X1PACISLE,
+         SES = X1SES,
+         hsls_w_cohort_g9 = W1STUDENT,
+         hsls_w_cohort_g12 = W2STUDENT)
+
+
+
+as.numeric(as.character(hsls$sex)) %>% sum(na.rm = TRUE)
+
+
+table(hsls$sex, hsls$excellentTests)
+table(hsls_old$sex, hsls_old$excellentTests)
+
+
+table(hsls$sex)
+table(hsls_old$sex)
+sum(hsls_old$sex, na.rm = TRUE)
+
+
+
+
+
+#head(hsls$masterSkills)
+#head(hsls$excellentAssign)
+#head(hsls$race)
+
+
+table_new <- table(hsls$masterSkills, hsls$asian)
+table_old <- table(hsls_old$masterSkills, hsls_old$asian)
+
+```
