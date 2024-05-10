@@ -1,22 +1,20 @@
 ---
-title: "hslscompare"
-format: html
+title: "hsls_comparison"
+format: pdf
 editor: visual
 ---
 
 ```{r}
-
-
-set.seed(42)
+#| output: FALSE
+#| echo: false
 
 library(dplyr)
+library(ggplot2)
+library(gridExtra)
 
 load("C:/Users/alex/OneDrive/Desktop/New folder (4)/hsls_17_student_pets_sr_v1_0.rdata")
 
 dathsls <- hsls_17_student_pets_sr_v1_0
-dathsls_old <- haven::read_sav('C:/Users/alex/Downloads/HSLS 2009 6.11.21.sav')
-
-
 hsls <- dathsls
 hsls <- hsls %>%
   rename(stu_id = STU_ID, # change column names
@@ -36,6 +34,7 @@ hsls <- hsls %>%
          hsls_w_cohort_g9 = W1STUDENT,
          hsls_w_cohort_g12 = W2STUDENT)
 
+dathsls_old <- haven::read_sav('C:/Users/alex/Downloads/HSLS 2009 6.11.21.sav')
 hsls_old <- dathsls_old
 hsls_old <- hsls_old %>%
   rename(stu_id = STU_ID, # change column names
@@ -55,29 +54,289 @@ hsls_old <- hsls_old %>%
          hsls_w_cohort_g9 = W1STUDENT,
          hsls_w_cohort_g12 = W2STUDENT)
 
+attr(hsls_old$sex, "labels") <- NULL
 
+math_items <- c("excellentTests", "understandTexts",
+                "excellentAssign", "masterSkills")
+hsls$excellentAssign[1:10]
+levels(hsls$understandTexts)
+# 1 = STRONGLY AGREE
+# 2 = AGREE
+# 3 = DISAGREE
+# 4 = STRONGLY DISAGREE
+# 5 = ITEM LEGITAMTE SKIP / NA
+# 6 = UNIT NON-RESPONSE
+# 7 = MISSING
 
-as.numeric(as.character(hsls$sex)) %>% sum(na.rm = TRUE)
+# MALE   = 1
+# FEMALE = 2
 
+# convert the math items to numeric to remove attributes and labels
+hsls_old[,math_items] <- apply(hsls_old[,math_items], MARGIN = 2, as.numeric)
 
-table(hsls$sex, hsls$excellentTests)
-table(hsls_old$sex, hsls_old$excellentTests)
-
-
-table(hsls$sex)
-table(hsls_old$sex)
-sum(hsls_old$sex, na.rm = TRUE)
-
-
-
-
-
-#head(hsls$masterSkills)
-#head(hsls$excellentAssign)
-#head(hsls$race)
-
-
-table_new <- table(hsls$masterSkills, hsls$asian)
-table_old <- table(hsls_old$masterSkills, hsls_old$asian)
+hsls[,math_items] <- lapply(hsls[math_items], function(x) {
+  levels(x) <- c(1, 2, 3, 4, 5, 6, 7)  # Redefine levels
+  as.numeric(x)                # Convert to numeric.
+})
 
 ```
+
+The new dataset (hsls, retrieved from \_\_\_) has 23503 observations with 9614 variables. The old dataset (From what we had before) has 25206 observations with 185 variables. The first and last student ID of both datasets are 10000 and 35206.
+
+Difference of 1703. The new dataset is skipping rows, going from (e.g.) 10017 to 10019, where the old dataset includes 10018. For the rows that were skipped in the new dataset, all values (except for demographics) are either 0 or NA.
+
+Demographic variables (sex, race) usually have a value, but seems random as to when it does or doesn't.
+
+However, even rows that both datasets have (such as student id 10031) have different values. Student 10031 for the new dataset has an SES value of -8. Looking at the X1SES_IM variable, all SES values that were imputed were suppressed with -8 in the public dataset. This does not apply to the efficacy scores. These are all completely equal, excluding NA values.
+
+```{r}
+#| echo: false
+#| output: false
+#setdiff(hsls_old$stu_id, hsls$stu_id)
+
+length(setdiff(hsls_old$stu_id, hsls$stu_id))
+
+length(setdiff(hsls_old$SES, hsls$SES))
+length(setdiff(hsls$SES, hsls_old$SES))
+25206 - 23503
+
+hsls_old$sex[17]
+hsls$SES[17]
+hsls$SES[17]
+
+hsls[hsls$sex == "Missing", ]
+
+
+discreps <- setdiff(hsls_old$SES, hsls$SES)
+
+discreps[2]
+
+hsls_old[hsls_old$SES == -0.9159, ]
+
+hsls_old$stu_id[31]
+hsls_old$SES[31]
+
+hsls$stu_id[29]
+hsls$SES[29]
+
+hsls$X1SES_IM[18]
+
+
+```
+
+## Bar Graphs of Sex
+
+```{r}
+#| echo: false
+# Table in new dataset doesn't use NA, instead codes as "Missing"
+total_sex_hsls <- sum(table(hsls$sex, useNA = "always")[1:5])
+total_sex_hsls_clean <- sum(table(hsls$sex, useNA = "no")[1:2])
+
+total_sex_hsls_old <- sum(table(hsls_old$sex, useNA = "always"))
+total_sex_hsls_old_clean <- sum(table(hsls_old$sex, useNA = "no"))
+
+hsls_plot_sex_old <- ggplot(hsls_old, aes(x = as.factor(sex))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  scale_x_discrete(labels = c(`1` = "Male (1)", `2` = "Female (2)")) +
+  labs(title = "Bar Graph: Sex (Old)", 
+       x = "Sex", 
+       y = "Count") +
+  geom_text(aes(label = after_stat(count)), stat = 'count', 
+            position = position_stack(vjust = 0.5), color = "red") +
+  annotate("text", x = 2, y = total_sex_hsls_old - 9000, label = paste("Total without NAs:", total_sex_hsls_old_clean)) +
+  annotate("text", x = 2, y = total_sex_hsls_old - 8000, label = paste("Total with NAs:", total_sex_hsls_old))
+
+hsls_plot_sex <- ggplot(hsls, aes(x = as.factor(sex))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  scale_x_discrete(labels = c(`1` = "Male (1)", `2` = "Female(2)")) +
+  labs(title = "Bar Graph: Sex (New)", 
+       x = "Sex", 
+       y = "Count") +
+  geom_text(aes(label = after_stat(count)), stat = 'count', 
+            position = position_stack(vjust = 0.5), color = "red") +
+   annotate("text", x = 2, y = total_sex_hsls - 11000, label = paste("Total without NAs:", total_sex_hsls_clean)) +
+   annotate("text", x = 2, y = total_sex_hsls - 10000, label = paste("Total with NAs:", total_sex_hsls))
+
+grid.arrange(hsls_plot_sex_old, hsls_plot_sex, ncol = 2)
+```
+
+The 6 "Missing" values in the new dataset are all marked as NA in the old. The proportions are very close, but off due to most of the skipped rows including sex.
+
+## Bar Graphs of the unrestricted Races (Black or White)
+
+```{r}
+#| echo: false
+# Table in new dataset doesn't use NA, instead codes as "Missing"
+total_black_hsls <- sum(table(hsls$black, useNA = "always")[1:5])
+total_black_hsls_clean <- sum(table(hsls$black, useNA = "no")[1:2])
+
+total_black_hsls_old <- sum(table(hsls_old$black, useNA = "always"))
+total_black_hsls_old_clean <- sum(table(hsls_old$black, useNA = "no"))
+
+hsls_plot_black_old <- ggplot(hsls_old, aes(x = as.factor(black))) + 
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  scale_x_discrete(labels = c(`0` = "Not Black", `1` = "Black")) +
+  labs(title = "Bar Graph: Black (Old)", 
+       x = "Black", 
+       y = "Count") +
+  geom_text(aes(label = after_stat(count)), stat = 'count', 
+            position = position_stack(vjust = 0.5), color = "red") +
+  annotate("text", x = 2, y = total_black_hsls_old - 9000, label = paste("Total without NAs:", total_black_hsls_old_clean)) +
+  annotate("text", x = 2, y = total_black_hsls_old - 8000, label = paste("Total with NAs:", total_black_hsls_old))
+
+
+hsls_plot_black <- ggplot(hsls, aes(x = as.factor(black))) + 
+  scale_x_discrete(labels = c(`0` = "Not Black", `1` = "Black")) +
+  geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+  labs(title = "Bar Graph: Black (New)", 
+       x = "Black", 
+       y = "Count") +
+  geom_text(aes(label = after_stat(count)), stat = 'count', 
+            position = position_stack(vjust = 0.5), color = "red") +
+   annotate("text", x = 2, y = total_sex_hsls - 11000, label = paste("Total without NAs:", total_black_hsls_clean)) +
+   annotate("text", x = 2, y = total_sex_hsls - 10000, label = paste("Total with NAs:", total_black_hsls))
+
+grid.arrange(hsls_plot_black_old, hsls_plot_black, ncol = 2)
+
+
+table(hsls$black, useNA = "always")[1:5]
+```
+
+### Function to calculate summaries and generate graphs
+
+```{r}
+#| echo: false
+
+calculate_and_plot_hsls <- function(variable_name, data=hsls) {
+  # Calculate mean and median
+  mean_value <- mean(data[[variable_name]], na.rm = TRUE)
+  median_value <- median(data[[variable_name]], na.rm = TRUE)
+  total_non_response <- sum(table(data[[variable_name]], useNA = "always")[5:7])
+
+
+  # Create the plot
+  ggplot(data = data, aes(x = as.factor(data[[variable_name]]))) +
+     geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+     scale_x_discrete(labels = c(`1` = "Almost Never (1)", 
+                                 `2` = "Sometimes (2)", 
+                                 `3` = "Often (3)", 
+                                 `4` = "Almost Always(4)",
+                                 `5` = "Item Legitimate Skip \n / NA (5)", 
+                                 `6` = "Unit Non-Response (6)",
+                                 `7` = "Missing (7)")) +
+     labs(title = paste0("Bar Graph: (New HSLS) ", variable_name, " Scores"),
+          x = variable_name,
+          y = "Count") +
+     geom_text(aes(label = after_stat(count)), stat = 'count',
+               position = position_stack(vjust = 0.5), color = "red") +
+     annotate("text", x = Inf, y = Inf,
+              label = paste("Mean:", round(mean_value, 2)),
+              hjust = 1.1, vjust = 3, size = 4, color = "black") +
+     annotate("text", x = Inf, y = Inf,
+              label = paste("Median:", median_value),
+              hjust = 1.1, vjust = 5, size = 4, color = "black") +
+     annotate("text", x = Inf, y = Inf,
+              label = paste("Total Non-Responses:", total_non_response),
+              hjust = 1.1, vjust = 7, size = 4, color = "black") +
+    coord_flip()
+}
+
+
+calculate_and_plot_hsls_old <- function(variable_name, data=hsls_old) {
+  # Calculate mean and median
+  mean_value <- mean(data[[variable_name]], na.rm = TRUE)
+  median_value <- median(data[[variable_name]], na.rm = TRUE)
+
+  # Create the plot
+  ggplot(data, aes(x = as.factor(data[[variable_name]]))) +
+    geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
+    scale_x_discrete(labels = c(`1` = "Almost Never (1)", 
+                                `2` = "Sometimes (2)", 
+                                `3` = "Often (3)", 
+                                `4` = "Almost Always (4)")) +
+    labs(title = paste0("Bar Graph: (Old HSLS) ", variable_name, " Scores"), 
+         x = variable_name,
+         y = "Count") +
+    geom_text(aes(label = after_stat(count)), stat = 'count', 
+              position = position_stack(vjust = 0.5), color = "red") +
+    annotate("text", x = Inf, y = Inf, 
+             label = paste("Mean:", round(mean_value, 2)), 
+             hjust = 1.1, vjust = 3, size = 4, color = "black") +
+    annotate("text", x = Inf, y = Inf, 
+             label = paste("Median:", median_value), 
+             hjust = 1.1, vjust = 1, size = 4, color = "black") +
+    coord_flip()
+}
+
+```
+
+### Bar Graphs of Excellent Tests
+
+```{r}
+#| echo: false
+#| warning: false
+# Generates warning on first function call / Not sure why
+# "9th grader confident can do excellent job on fall 2009 math tests"
+calculate_and_plot_hsls("excellentTests")
+calculate_and_plot_hsls_old("excellentTests")
+```
+
+6157 - 4454 is 1703, the difference in rows of the two datasets.
+
+### Bar Graphs of Understand Texts
+
+```{r}
+#| echo: false
+#| warning: false
+# "9th grader certain can understand fall 2009 math textbook"
+calculate_and_plot_hsls("understandTexts")
+calculate_and_plot_hsls_old("understandTexts")
+
+```
+
+Difference again, 1703.
+
+### Bar Graphs of Excellent Assign
+
+```{r}
+#| echo: false
+#| warning: false
+# "9th grader confident can do excellent job on fall 2009 math assignments"
+calculate_and_plot_hsls("excellentAssign")
+calculate_and_plot_hsls_old("excellentAssign")
+
+```
+
+Difference again, 1703.
+
+### Bar Graphs of Master Skills
+
+```{r}
+#| echo: false
+#| warning: false
+# "9th grader certain can master skills in fall 2009 math course"
+calculate_and_plot_hsls("masterSkills")
+calculate_and_plot_hsls_old("masterSkills")
+
+
+```
+
+Difference again, 1703.
+
+```{r}
+#| echo: false
+
+# lapply(math_items, calculate_and_plot_hsls_old)
+# graphs <- lapply(math_items, calculate_and_plot_hsls)
+# graphs
+
+
+```
+
+# Conclusion
+
+As far as I can tell, the difference in the two datasets is due to the new dataset being the public use version, where many non-efficacy variables are suppressed. Some variables have a random number of observations suppressed due to these observations being imputed, and observations that were mostly NA except for a few demographics were skipped in the public version.
+
+The demographic variables all have slightly different proportions. The new dataset "skips" some student ID's, and these skipped observations include demographic variables but most other variables are NA.
+
+The efficacy score variables all have the exact same counts and proportions when missing values are not counted.
