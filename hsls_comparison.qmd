@@ -81,7 +81,7 @@ hsls[,math_items] <- lapply(hsls[math_items], function(x) {
 
 ```
 
-The new dataset (hsls, retrieved from \_\_\_) has 23503 observations with 9614 variables. The old dataset (From what we had before) has 25206 observations with 185 variables. The first and last student ID of both datasets are 10000 and 35206.
+The new dataset (hsls, retrieved from https://nces.ed.gov/datalab/onlinecodebook/session/codebook/fa65d339-7237-4a01-95c6-aa4a10fb02f6) has 23503 observations with 9614 variables. The old dataset (From what we had before) has 25206 observations with 185 variables. The first and last student ID of both datasets are 10000 and 35206.
 
 Difference of 1703. The new dataset is skipping rows, going from (e.g.) 10017 to 10019, where the old dataset includes 10018. For the rows that were skipped in the new dataset, all values (except for demographics) are either 0 or NA.
 
