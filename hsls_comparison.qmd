@@ -1,5 +1,5 @@
 ---
-title: "hsls_comparison"
+title: "High School Longitudinal Study (HSLS) Comparison"
 format: pdf
 editor: visual
 ---
@@ -11,7 +11,7 @@ editor: visual
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
-
+library(psych)
 load("C:/Users/alex/OneDrive/Desktop/New folder (4)/hsls_17_student_pets_sr_v1_0.rdata")
 
 dathsls <- hsls_17_student_pets_sr_v1_0
@@ -118,8 +118,26 @@ hsls_old$SES[31]
 
 hsls$stu_id[29]
 hsls$SES[29]
+hsls$X1SES_IM[31]
 
-hsls$X1SES_IM[18]
+
+
+summary(hsls$X1SES_IM)
+
+hsls$SES[32]
+hsls$X1SES_IM[44]
+
+
+table(hsls$X1SES_IM)
+table(hsls$SES[hsls$SES == -8])
+
+
+
+
+
+
+
+
 
 
 ```
@@ -144,7 +162,8 @@ hsls_plot_sex_old <- ggplot(hsls_old, aes(x = as.factor(sex))) +
   geom_text(aes(label = after_stat(count)), stat = 'count', 
             position = position_stack(vjust = 0.5), color = "red") +
   annotate("text", x = 2, y = total_sex_hsls_old - 9000, label = paste("Total without NAs:", total_sex_hsls_old_clean)) +
-  annotate("text", x = 2, y = total_sex_hsls_old - 8000, label = paste("Total with NAs:", total_sex_hsls_old))
+  annotate("text", x = 2, y = total_sex_hsls_old - 8000, label = paste("Total with NAs:", total_sex_hsls_old)) 
+
 
 hsls_plot_sex <- ggplot(hsls, aes(x = as.factor(sex))) + 
   geom_bar(fill = "darkseagreen3", color = "darkseagreen3") +
@@ -155,7 +174,8 @@ hsls_plot_sex <- ggplot(hsls, aes(x = as.factor(sex))) +
   geom_text(aes(label = after_stat(count)), stat = 'count', 
             position = position_stack(vjust = 0.5), color = "red") +
    annotate("text", x = 2, y = total_sex_hsls - 11000, label = paste("Total without NAs:", total_sex_hsls_clean)) +
-   annotate("text", x = 2, y = total_sex_hsls - 10000, label = paste("Total with NAs:", total_sex_hsls))
+   annotate("text", x = 2, y = total_sex_hsls - 10000, label = paste("Total with NAs:", total_sex_hsls)) 
+
 
 grid.arrange(hsls_plot_sex_old, hsls_plot_sex, ncol = 2)
 ```
@@ -182,7 +202,8 @@ hsls_plot_black_old <- ggplot(hsls_old, aes(x = as.factor(black))) +
   geom_text(aes(label = after_stat(count)), stat = 'count', 
             position = position_stack(vjust = 0.5), color = "red") +
   annotate("text", x = 2, y = total_black_hsls_old - 9000, label = paste("Total without NAs:", total_black_hsls_old_clean)) +
-  annotate("text", x = 2, y = total_black_hsls_old - 8000, label = paste("Total with NAs:", total_black_hsls_old))
+  annotate("text", x = 2, y = total_black_hsls_old - 8000, label = paste("Total with NAs:", total_black_hsls_old)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 
 hsls_plot_black <- ggplot(hsls, aes(x = as.factor(black))) + 
@@ -194,18 +215,18 @@ hsls_plot_black <- ggplot(hsls, aes(x = as.factor(black))) +
   geom_text(aes(label = after_stat(count)), stat = 'count', 
             position = position_stack(vjust = 0.5), color = "red") +
    annotate("text", x = 2, y = total_sex_hsls - 11000, label = paste("Total without NAs:", total_black_hsls_clean)) +
-   annotate("text", x = 2, y = total_sex_hsls - 10000, label = paste("Total with NAs:", total_black_hsls))
+   annotate("text", x = 2, y = total_sex_hsls - 9000, label = paste("Total with NAs:", total_black_hsls)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 grid.arrange(hsls_plot_black_old, hsls_plot_black, ncol = 2)
 
 
-table(hsls$black, useNA = "always")[1:5]
 ```
 
 ### Function to calculate summaries and generate graphs
 
 ```{r}
-#| echo: false
+#| echo: true
 
 calculate_and_plot_hsls <- function(variable_name, data=hsls) {
   # Calculate mean and median
@@ -240,8 +261,6 @@ calculate_and_plot_hsls <- function(variable_name, data=hsls) {
               hjust = 1.1, vjust = 7, size = 4, color = "black") +
     coord_flip()
 }
-
-
 calculate_and_plot_hsls_old <- function(variable_name, data=hsls_old) {
   # Calculate mean and median
   mean_value <- mean(data[[variable_name]], na.rm = TRUE)
@@ -267,10 +286,9 @@ calculate_and_plot_hsls_old <- function(variable_name, data=hsls_old) {
              hjust = 1.1, vjust = 1, size = 4, color = "black") +
     coord_flip()
 }
-
 ```
 
-### Bar Graphs of Excellent Tests
+## Bar Graphs of Excellent Tests
 
 ```{r}
 #| echo: false
@@ -283,7 +301,7 @@ calculate_and_plot_hsls_old("excellentTests")
 
 6157 - 4454 is 1703, the difference in rows of the two datasets.
 
-### Bar Graphs of Understand Texts
+## Bar Graphs of Understand Texts
 
 ```{r}
 #| echo: false
@@ -296,7 +314,7 @@ calculate_and_plot_hsls_old("understandTexts")
 
 Difference again, 1703.
 
-### Bar Graphs of Excellent Assign
+## Bar Graphs of Excellent Assign
 
 ```{r}
 #| echo: false
@@ -309,7 +327,7 @@ calculate_and_plot_hsls_old("excellentAssign")
 
 Difference again, 1703.
 
-### Bar Graphs of Master Skills
+## Bar Graphs of Master Skills
 
 ```{r}
 #| echo: false
@@ -333,10 +351,35 @@ Difference again, 1703.
 
 ```
 
+
+# Example of imputed data: SES 
+```{r}
+
+summary(hsls$SES[hsls$SES != -8.0])
+summary(hsls_old$SES)
+
+
+
+SES_imputed_rows_new <- hsls %>% filter(X1SES_IM == "Imputed entirely" | (X1SES_IM == "Components imputed"))
+nrow(SES_imputed_rows_new)  
+                          
+SES_imputed_rows_suppressed_new <- SES_imputed_rows_new %>% filter(SES == -8)
+nrow(SES_imputed_rows_suppressed_new) 
+
+
+
+
+```
+The old dataset contains NAs and imputed SES values. The new dataset codes both of these with a value of -8.0. When we remove all instances of -8 in the old dataset, the descriptive statistics are quite similar. 
+
+Of the 6809 rows that had either the "Imputed entirely" or "Components imputed" flag, 172 of them have been suppressed with a -8. The slight discrepancy in the descriptive statistics of the SES values of both datasets are due to these 172 values that are coded as -8 in the new (public) dataset, whereas they have non-NA, meaningful values in the old dataset.
+
 # Conclusion
 
 As far as I can tell, the difference in the two datasets is due to the new dataset being the public use version, where many non-efficacy variables are suppressed. Some variables have a random number of observations suppressed due to these observations being imputed, and observations that were mostly NA except for a few demographics were skipped in the public version.
 
 The demographic variables all have slightly different proportions. The new dataset "skips" some student ID's, and these skipped observations include demographic variables but most other variables are NA.
 
-The efficacy score variables all have the exact same counts and proportions when missing values are not counted.
+
+
+The efficacy score variables all have the same counts and proportions when missing values are not counted.
