@@ -1,0 +1,430 @@
+---
+title: "HSLS Analysis"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(psych)
+library(tidyr)
+
+dathsls <- haven::read_sav("HSLS6.11.21.sav")
+
+hsls <- dathsls
+
+hsls <- hsls %>%
+  rename(stu_id = STU_ID, # change column names
+         sch_id = SCH_ID,
+         # excellentTests = S1MTESTS,
+         # understandTexts = S1MTEXTBOOK,
+         # masterSkills = S1MSKILLS,
+         # excellentAssign = S1MASSEXCL,
+         # sex = X1SEX,
+         race = X1RACE,
+         hispanic = X1HISPANIC,
+         white = X1WHITE,
+         black = X1BLACK,
+         asian = X1ASIAN,
+         pacificIsland = X1PACISLE,
+         SES = X1SES,
+         hsls_w_cohort_g9 = W1STUDENT,
+         hsls_w_cohort_g12 = W2STUDENT)
+
+hsls <- dathsls %>%
+  rename(math_theta1 = X2TXMTH,
+         math_theta2 = X1TXMTH)
+
+```
+# Give only the names that start with S1 or S2
+S1 = 9th Grade 2009
+S2 = 11th Grade 2012
+
+```{r}
+
+filtered_S1 <- names(hsls)[grep("^S1", names(hsls))]
+filtered_S1
+
+filtered_s2 <- names(hsls)[grep("^S2", names(hsls))]
+filtered_s2
+
+
+
+
+```
+
+## Create subset of dataset with only math efficacy items
+```{r}
+
+names(hsls)[grep("^S1M|^S2M", names(hsls))]
+
+math_eff <- hsls[, grep("^S1M|^S2M", names(hsls))]
+
+# Ensures that the dataset was created successfully, difference should be 0
+setdiff(names(hsls)[grep("^S1M | $S2M", names(hsls))], names(math_eff))
+
+```
+```{r}
+
+# 1 Strongly agree 
+# 2 Agree 
+# 3 Disagree 
+# 4 Strongly Disagree
+
+ggplot(math_eff, aes(x = factor(S1MPERSON1))) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Distribution of S1MPERSON1 Responses",
+       x = "S1MPERSON1",
+       y = "Count") +
+  theme_minimal()
+
+
+
+
+
+
+
+```
+
+```{r}
+
+ggplot(hsls, aes(x = factor(S2MPERSON1))) +
+  geom_bar(fill = "coral") +
+  labs(title = "Distribution of S2MPERSON1 Responses",
+       x = "S2MPERSON1",
+       y = "Count") +
+  theme_minimal()
+
+```
+
+# 
+```{r}
+
+long_SMPERSON1 <- gather(math_eff, key = "variable", value = "value", S1MPERSON1, S2MPERSON1)
+
+# Create a grouped bar plot
+ggplot(long_SMPERSON1, aes(x = factor(value), fill = variable)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution of S1MPERSON1 and S2MPERSON1",
+       x = "Likert Scale Response",
+       y = "Count",
+       fill = "Variable") +
+  theme_minimal() +
+  scale_fill_manual(values = c("skyblue", "coral")) +
+  scale_x_discrete(labels = c("Strongly Agree", "Agree", "Disagree", "Strongly Disagree", "NA"))
+
+
+
+
+```
+```{r}
+
+
+long_SMTESTS <- gather(math_eff, key = "variable", value = "value", S1MTESTS, S2MTESTS)
+
+# Create a grouped bar plot
+ggplot(long_SMTESTS, aes(x = factor(value), fill = variable)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution of S1MTESTS and S2MTESTS",
+       x = "Likert Scale Response",
+       y = "Count",
+       fill = "Variable") +
+  theme_minimal() +
+  scale_fill_manual(values = c("skyblue", "coral")) +
+  scale_x_discrete(labels = c("Strongly Agree", "Agree", "Disagree", "Strongly Disagree", "NA"))
+
+
+
+
+
+
+
+```
+## Creating a function to automatically create graph of desired variables
+```{r}
+
+create_grouped_bar_plot <- function(data, missing_word) {
+  # Dynamically gather the columns based on the missing word
+  long_data <- gather(data, key = "variable", value = "value", 
+                      !!paste0("S1M", missing_word), !!paste0("S2M", missing_word))
+  
+  # Create the grouped bar plot
+  ggplot(long_data, aes(x = factor(value), fill = variable)) +
+    geom_bar(position = "dodge") +
+    labs(title = paste("Distribution of S1M", missing_word, " and S2M", missing_word, sep = ""),
+         x = "Likert Scale Response",
+         y = "Count",
+         fill = "Variable") +
+    theme_minimal() +
+    scale_fill_manual(values = c("skyblue", "coral")) +
+    scale_x_discrete(labels = c("Strongly Agree", "Agree", "Disagree", "Strongly Disagree", "NA"))
+}
+
+
+
+```
+
+```{r}
+male_only <- hsls[hsls$X1SEX %in% c(1), ]
+summary(male_only$X1SEX)
+
+female_only <- hsls[hsls$X1SEX %in% c(2), ]
+summary(female_only$X1SEX)
+
+# Summary Math ability of each gender
+summary(male_only$math_theta1)
+summary(female_only$math_theta1)
+
+summary(male_only$math_theta2)
+summary(female_only$math_theta2)
+
+```
+
+
+
+## Tests
+Teen (9th  / 11th grader) confident can do excellent job on 
+(fall 2009 / spring 2012) math tests
+
+```{r}
+
+create_grouped_bar_plot(math_eff, "TESTS")
+summary(math_eff$S1MTESTS)
+summary(math_eff$S2MTESTS)
+
+summary(male_only$S1MTESTS)
+summary(female_only$S1MTESTS)
+
+summary(male_only$S2MTESTS)
+summary(female_only$S2MTESTS)
+
+
+
+
+```
+
+
+
+## Textbook
+Teen (9th  / 11th grader) certain can understand
+(fall 2009 / spring 2012) math textbook
+```{r}
+
+create_grouped_bar_plot(math_eff, "TEXTBOOK")
+summary(math_eff$S1MTEXTBOOK)
+summary(math_eff$S2MTEXTBOOK)
+
+summary(male_only$S2MTEXTBOOK)
+summary(female_only$S2MTEXTBOOK)
+
+```
+
+## Skills
+Teen certain can master skills in math course
+```{r}
+
+create_grouped_bar_plot(math_eff, "SKILLS")
+summary(math_eff$S1MSKILLS)
+summary(math_eff$S2MSKILLS)
+
+summary(male_only$S2MSKILLS)
+summary(female_only$S2MSKILLS)
+
+```
+## Assignments 
+Teen confident can do an excellent job on math assignments
+```{r}
+
+create_grouped_bar_plot(math_eff, "ASSEXCL")
+summary(math_eff$S1MASSEXCL)
+summary(math_eff$S2MASSEXCL)
+
+summary(male_only$S2MTESTS)
+summary(female_only$S2MTESTS)
+
+
+```
+
+
+## Discrepancy!
+From 9th to 11th grade, students' math self-efficacy declines. Why? 
+
+1. Difficulty of coursework goes up, self-efficacy follows as students do poorer
+2. 11th graders had more time to compare with their peers than 9th graders did, more comparison = lower self-efficacy?
+3. 11th graders have a better gauge of their math ability, are less over-confident. 
+4. Higher stakes. 11th graders are thinking about college, where math scores are much more important.
+5. Lack of encouragement. 9th graders were highly motivated, just starting high school. 11th graders slack on their assignments / grades, self-efficacy is reflected in this.
+
+
+Does self-efficacy correlate highly with actual math scores? If yes, could the worst self-efficacy scorers have dropped out? Conveniently, there is a "mathematics ability variable." Let's find out!
+
+## Actual and Efficacy 
+Treating the likert scale as continuous for the correlation
+
+```{r}
+
+summary(hsls$math_theta1)
+summary(hsls$math_theta2)
+
+head(math_eff$S1MTESTS)
+
+hist(hsls$math_theta1)
+hist(math_eff$S1MTESTS)
+
+
+cor.test(hsls$math_theta1, hsls$S1MTESTS)
+
+cor.test(male_only$math_theta1, male_only$S1MTESTS)
+cor.test(female_only$math_theta1, female_only$S1MTESTS)
+
+```
+
+
+```{r}
+
+tests_sagree    <- hsls[hsls$S1MTESTS %in% c(1), ]
+tests_agree     <- hsls[hsls$S1MTESTS %in% c(2), ]
+tests_disagree  <- hsls[hsls$S1MTESTS %in% c(3), ]
+tests_sdisagree <-  hsls[hsls$S1MTESTS %in% c(4), ]
+
+tests_sagree_male    <- male_only[male_only$S1MTESTS %in% c(1), ]
+tests_agree_male     <- male_only[male_only$S1MTESTS %in% c(2), ]
+tests_disagree_male  <- male_only[male_only$S1MTESTS %in% c(3), ]
+tests_sdisagree_male <-  male_only[male_only$S1MTESTS %in% c(4), ]
+
+tests_sagree_female    <- female_only[female_only$S1MTESTS %in% c(1), ]
+tests_agree_female     <- female_only[female_only$S1MTESTS %in% c(2), ]
+tests_disagree_female  <- female_only[female_only$S1MTESTS %in% c(3), ]
+tests_sdisagree_female <-  female_only[female_only$S1MTESTS %in% c(4), ]
+
+
+head(tests_sdisagree$S1MTESTS, 20)
+
+print("Strongly disagree")
+summary(tests_sdisagree$math_theta1)
+summary(tests_sdisagree_male$math_theta1)
+summary(tests_sdisagree_female$math_theta1)
+
+print("disagree")
+summary(tests_disagree$math_theta1)
+summary(tests_disagree_male$math_theta1)
+summary(tests_disagree_female$math_theta1)
+
+print("agree")
+summary(tests_agree$math_theta1)
+summary(tests_agree_male$math_theta1)
+summary(tests_agree_female$math_theta1)
+
+print("Strongly agree")
+summary(tests_sagree$math_theta1)
+summary(tests_sagree_male$math_theta1)
+summary(tests_sagree_female$math_theta1)
+
+print("Total")
+summary(hsls$math_theta1)
+
+```
+Males and females have different math abilities for the same self-efficacies.
+Is one gender better at predicting their math ability than the other?
+
+
+
+## Enjoying
+```{r}
+
+create_grouped_bar_plot(math_eff, "ENJOYING")
+#summary(math_eff$S1MENJOYING)
+
+```
+
+## Enjoying Math and Tests
+
+```{r}
+
+seg4 <- hsls[hsls$S1MENJOYING %in% c(4), ]
+seg3 <- hsls[hsls$S1MENJOYING %in% c(3), ]
+seg2 <- hsls[hsls$S1MENJOYING %in% c(2), ]
+seg1 <- hsls[hsls$S1MENJOYING %in% c(1), ]
+
+seg4_male <- male_only[male_only$S1MENJOYING %in% c(4), ]
+seg3_male <- male_only[male_only$S1MENJOYING %in% c(3), ]
+seg2_male <- male_only[male_only$S1MENJOYING %in% c(2), ]
+seg1_male <- male_only[male_only$S1MENJOYING %in% c(1), ]
+
+seg4_female <- female_only[female_only$S1MENJOYING %in% c(4), ]
+seg3_female <- female_only[female_only$S1MENJOYING %in% c(3), ]
+seg2_female <- female_only[female_only$S1MENJOYING %in% c(2), ]
+seg1_female <- female_only[female_only$S1MENJOYING %in% c(1), ]
+
+create_grouped_bar_plot(seg1, "TESTS")
+create_grouped_bar_plot(seg2, "TESTS")
+create_grouped_bar_plot(seg3, "TESTS")
+create_grouped_bar_plot(seg4, "TESTS")
+
+
+
+
+```
+
+```{r}
+
+# Total
+mean(is.na(seg1$S2MTESTS))
+mean(is.na(seg2$S2MTESTS))
+mean(is.na(seg3$S2MTESTS))
+mean(is.na(seg4$S2MTESTS))
+
+# Males
+mean(is.na(seg1_male$S2MTESTS))
+mean(is.na(seg2_male$S2MTESTS))
+mean(is.na(seg3_male$S2MTESTS))
+mean(is.na(seg4_male$S2MTESTS))
+
+# Females
+mean(is.na(seg1_female$S2MTESTS))
+mean(is.na(seg2_female$S2MTESTS))
+mean(is.na(seg3_female$S2MTESTS))
+mean(is.na(seg4_female$S2MTESTS))
+
+
+```
+Looking at 9th graders that strongly agree that they are enjoying math, proportion of missing on tests for 11th grade is 12%.
+For strongly disagree, 20%
+
+Missing at random? Does this mean anything?
+
+Also, different across genders?
+
+
+
+```{r}
+
+print("Assignments")
+mean(is.na(seg1$S2MASSEXCL))
+mean(is.na(seg2$S2MASSEXCL))
+mean(is.na(seg3$S2MASSEXCL))
+mean(is.na(seg4$S2MASSEXCL))
+
+
+print("Skills")
+mean(is.na(seg1$S2MSKILLS))
+mean(is.na(seg2$S2MSKILLS))
+mean(is.na(seg3$S2MSKILLS))
+mean(is.na(seg4$S2MSKILLS))
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
