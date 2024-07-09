@@ -279,6 +279,12 @@ cor.test(hsls$math_theta1, hsls$S1MTESTS)
 cor.test(male_only$math_theta1, male_only$S1MTESTS)
 cor.test(female_only$math_theta1, female_only$S1MTESTS)
 
+modelm <- lm(math_theta1 ~  S1MTESTS, data = hsls %>% dplyr::filter(X1SEX == 1))
+modelf <- lm(math_theta1 ~  S1MTESTS, data = hsls %>% dplyr::filter(X1SEX == 2))
+
+summary(modelm)
+summary(modelf)
+
 ```
 
 
